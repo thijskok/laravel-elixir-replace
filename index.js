@@ -1,26 +1,31 @@
-var gulp    = require('gulp'),
-    elixir  = require('laravel-elixir'),
-    replace = require('gulp-batch-replace'),
-    parsePath = require('parse-filepath'),
-    utilities = require('laravel-elixir/ingredients/commands/Utilities');
+var gulp = require('gulp'),
+    Elixir = require('laravel-elixir'),
+    replace = require('gulp-batch-replace');
 
-elixir.extend('replace', function(file, replacements, output) {
+Elixir.extend('replace', function (src, replacements, output) {
+    var paths = prepGulpPaths(src, output);
 
-    gulp.task('replace', function () {
-        utilities.logTask("Replacing strings in", file);
+    new Elixir.Task('replace', function () {
+        this.log(paths.src, paths.output);
 
-        if ( output ) {
-            var path = parsePath(output),
-                isDir = (path.basename == path.name),
-                dest = isDir ? output : path.dirname;
-        }else{
-            var dest = parsePath(file).dirname;
-        }
-
-        return gulp.src(file)
-                   .pipe(replace(replacements))
-                   .pipe(gulp.dest(dest));
-    });
-
-    return this.queueTask('replace');
+        return (
+            gulp.src(paths.src.path)
+                .pipe(replace(replacements))
+                .pipe(gulp.dest(paths.output.baseDir))
+        );
+    })
+    .watch(paths.src.path)
+    .ignore(paths.output.path);
 });
+
+/**
+ * Prep the Gulp src and output paths.
+ *
+ * @param {string|array} src
+ * @param {string|null}  output
+ */
+var prepGulpPaths = function (src, output) {
+    return new Elixir.GulpPaths()
+        .src(src)
+        .output(output || src);
+};
